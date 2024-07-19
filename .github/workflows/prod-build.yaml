@@ -1,7 +1,7 @@
 name: kaia-websites-api build image workflow for PROD env
 on:
   push:
-    branches: ["main", "modify-cicd"]
+    branches: ["main"]
 
 jobs:
   deploy:
