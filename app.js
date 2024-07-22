@@ -1,6 +1,7 @@
 var express = require("express");
 var app = express();
 const fetch = require("node-fetch");
+const cors = require("cors");
 
 var StatsData = {};
 const { Flipside } = require("@flipsidecrypto/sdk");
@@ -15,6 +16,8 @@ const COIN_GECKO_URL =
   process.env.COIN_GECKO_BASE_URL +
   process.env.COINGECKO_API_KEY +
   process.env.COIN_GECKO_POSTFIX;
+
+app.use(cors());
 
 app.get("/analytics", async function (req, res) {
   return res.status(200).json({ success: true, data: StatsData });
