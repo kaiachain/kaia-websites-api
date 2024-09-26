@@ -13,13 +13,7 @@ const {
   FORM_ID_SUBMISSION_PROJECTS: submissionFormIdProjects,
   FORM_ID_SUBMISSION_IOK: submissionFormIdIok,
   COLLECTION_CATEGORIES_PARTNERS_ID: partnerCategoryCollectionId
-} = {
-  TOKEN_AUTH_WEBSTIE: 'a33077fa53b1abb014ccd189ae77f7744080865286ae6fd3f88d92eee25dad53',
-  COLLECTION_PARTNER_ID: '66a8ba5239a3fbe8e678dae4',
-  FORM_ID_SUBMISSION_PROJECTS: '66b0c1cb15d49137ecd3e59c',
-  FORM_ID_SUBMISSION_IOK: '66c9a377866d1ce393c8b686',
-  COLLECTION_CATEGORIES_PARTNERS_ID: '66a8ba5239a3fbe8e678db00'
-};
+} = process.env
 
 const webflowCollectionUrl = `https://api.webflow.com/v2/collections/${partnerCollectionId}/items`;
 const webflowCategoriesPartnersUrl = `https://api.webflow.com/v2/collections/${partnerCategoryCollectionId}/items`;
