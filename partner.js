@@ -1,16 +1,28 @@
+var express = require("express");
+var app = express();
 const fetch = require("node-fetch");
+const cors = require("cors");
+app.use(cors());
 
 // API configuration
 const LIMIT = 100
 const CALL_INTERVAL_API = 300000; // Call API every 5 minutes
 const {
-  COLLECTION_PARTNER_ID: collectionId,
-  FORM_ID_SUBMISSION_PROJECTS: formIdProjects,
-  FORM_ID_SUBMISSION_IOK: formIdIok,
-  TOKEN_AUTH_WEBSTIE: authToken,
-} = process.env;
+  TOKEN_AUTH_WEBSTIE: websiteAuthToken,
+  COLLECTION_PARTNER_ID: partnerCollectionId,
+  FORM_ID_SUBMISSION_PROJECTS: submissionFormIdProjects,
+  FORM_ID_SUBMISSION_IOK: submissionFormIdIok,
+  COLLECTION_CATEGORIES_PARTNERS_ID: partnerCategoryCollectionId
+} = {
+  TOKEN_AUTH_WEBSTIE: 'a33077fa53b1abb014ccd189ae77f7744080865286ae6fd3f88d92eee25dad53',
+  COLLECTION_PARTNER_ID: '66a8ba5239a3fbe8e678dae4',
+  FORM_ID_SUBMISSION_PROJECTS: '66b0c1cb15d49137ecd3e59c',
+  FORM_ID_SUBMISSION_IOK: '66c9a377866d1ce393c8b686',
+  COLLECTION_CATEGORIES_PARTNERS_ID: '66a8ba5239a3fbe8e678db00'
+};
 
-const webflowCollectionUrl = `https://api.webflow.com/v2/collections/${collectionId}/items`;
+const webflowCollectionUrl = `https://api.webflow.com/v2/collections/${partnerCollectionId}/items`;
+const webflowCategoriesPartnersUrl = `https://api.webflow.com/v2/collections/${partnerCategoryCollectionId}/items`;
 
 // Fetch form submissions based on form type
 async function fetchFormSubmissions(formId) {
@@ -24,10 +36,29 @@ async function fetchFormSubmissions(formId) {
   }
 }
 
+// Fetch categories from Webflow
+async function fetchCategories() {
+  try {
+    const response = await fetchFromApi(webflowCategoriesPartnersUrl);
+    const categories = response.items || [];
+
+    const categoriesData = categories.map((category) => ({
+      id: category.id,  
+      name: category.fieldData.name 
+    }));
+
+    return categoriesData;
+
+  } catch (err) {
+    console.error("Error fetching categories:", err.message);
+  }
+}
+
 // Process submissions and insert or update accordingly
 async function processAndUpsertData(submissions) {
   try {
     const existingItems = await fetchExistingItems();
+    const categoriesData = await fetchCategories();
 
     for (const submission of submissions) {
       const { formResponse, displayName } = submission;
@@ -37,13 +68,31 @@ async function processAndUpsertData(submissions) {
           ? mapIOKPartnersFields(formResponse)
           : mapProjectFields(formResponse);
 
-      const existingItem = existingItems.find(
-        (item) => item.Name === submissionData.Name
+      // Find the matching category ID based on the category name
+      const categoryMatch = categoriesData.find(
+        (category) => category.name === submissionData.projectCategory
       );
+      
+      // If a match is found, assign the category ID
+      if (categoryMatch) {
+        submissionData.categoryId = [categoryMatch.id]; 
+      } else {
+        submissionData.categoryId = [];
+      }
+      
+      const existingItem = existingItems.find(
+        (item) => item.fieldData.name === submissionData.Name
+      );      
 
-      existingItem
-        ? await updateItem(existingItem._id, submissionData)
-        : await insertItem(submissionData);
+      if(existingItem) {
+        await updateItem(existingItem.id, submissionData)
+        console.log('Updated item:', submissionData.Name);
+      } else {
+        await insertItem(submissionData);
+        console.log('Inserting new item:', submissionData.Name);
+        
+      }
+
     }
   } catch (err) {
     console.error("Error processing and upserting data:", err.message);
@@ -111,7 +160,6 @@ async function insertItem(item) {
   const body = buildRequestBody(item);
   try {
     await sendToApi(webflowCollectionUrl, "POST", body);
-    console.log("Item inserted:", item.Name);
   } catch (err) {
     console.error("Error inserting item:", err.message);
   }
@@ -123,7 +171,6 @@ async function updateItem(itemId, updatedItem) {
   const body = buildRequestBody(updatedItem);
   try {
     await sendToApi(updateUrl, "PATCH", body);
-    console.log("Item updated:", updatedItem.Name);
   } catch (err) {
     console.error("Error updating item:", err.message);
   }
@@ -132,38 +179,42 @@ async function updateItem(itemId, updatedItem) {
 // Build the request body for insert or update
 function buildRequestBody(item) {
   return JSON.stringify({
-    fields: {
-      "Name": item.Name || "",
-      "Categories": item.projectCategory || "",
-      "Short Description": item.projectDescription || "",
-      "External Project Link Out": item.projectWebsite || "",
-      "Twitter/X": item.Twitter || "",
-      "Telegram": item.Telegram || "",
-      "Medium": item.Medium || "",
-      "Facebook": item.Facebook || "",
-      "Github": item.Github || "",
-      "Youtube": item.Youtube || "",
-      "Linkedin": item.Linkedin || "",
-      "Reddit": item.Reddit || "",
-      "Instagram": item.Instagram || "",
-      "OthersSocialLink": item.OthersSocialLink || "",
-      "Full Logo": item.FullLogo || "",
-      "Full Logo White": item.FullLogoWhite || "",
-      "Logo": item.Logo || "",
-      "Sector 1": item.SectorFirst || "",
-      "Sector 2": item.SectorSeconds || ""
+    isArchived: false,
+    isDraft: false,
+    fieldData: {
+      "name": item.Name || "",
+      "slug": (item.Name || "").toLowerCase().replace(/\s+/g, "-"),
+      "categories": item.categoryId || [],
+      "short-description": (item.projectDescription || "").substring(0, 200),
+      "decsription": item.projectDescription || "",
+      "external-link": item.projectWebsite || "",
+      "twitter-x": item.Twitter || "",
+      "telegram": item.Telegram || "",
+      "medium": item.Medium || "",
+      "facebook-2": item.Facebook || "",
+      "github": item.Github || "",
+      "youtube": item.Youtube || "",
+      "linkedin": item.Linkedin || "",
+      "reddit-2": item.Reddit || "",
+      "instagram": item.Instagram || "",
+      "others-social-link": item.OthersSocialLink || "",
+      "full-logo": item.FullLogo || "",
+      "full-logo-white": item.FullLogoWhite || "",
+      "logo": item.Logo || "",
+      "sector-1-7": item.SectorFirst || "",
+      "sector-2-7": item.SectorSeconds || ""
     }
   });
 }
 
 // Fetch data from API with appropriate headers
 async function fetchFromApi(url) {
-  const response = await fetch(url, {
-    method: "GET",
-    headers: getAuthHeaders(),
-  });
-  if (!response.ok) throw new Error(`Failed to fetch from API. Status: ${response.status}`);
-  return response.json();
+   const response = await fetch(url, {
+     method: "GET",
+     headers: getAuthHeaders(),
+   });
+   if (!response.ok) throw new Error(`Failed to fetch from API. Status: ${response.status}`);
+   return response.json();
 }
 
 // Send data to API (for POST and PATCH requests)
@@ -180,7 +231,7 @@ async function sendToApi(url, method, body) {
 function getAuthHeaders(method = "GET") {
   return {
     accept: "application/json",
-    authorization: `Bearer ${authToken}`,
+    authorization: `Bearer ${websiteAuthToken}`,
     ...(method !== "GET" && { "Content-Type": "application/json" }),
   };
 }
@@ -188,8 +239,8 @@ function getAuthHeaders(method = "GET") {
 // Schedule fetching form submissions for both IOK Partners and Projects
 setInterval(() => {
   try {
-    fetchFormSubmissions(formIdIok);    // Fetch IOK Partners form submissions
-    fetchFormSubmissions(formIdProjects); // Fetch Projects form submissions
+    fetchFormSubmissions(submissionFormIdIok);    // Fetch IOK Partners form submissions
+    fetchFormSubmissions(submissionFormIdProjects); // Fetch Projects form submissions
   } catch (err) {
     console.error(err);
   }
