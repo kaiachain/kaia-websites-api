@@ -7,7 +7,8 @@ var StatsData = {};
 const { Flipside } = require("@flipsidecrypto/sdk");
 require("dotenv").config();
 
-require("./partner.js");
+require("./services/partner.js");
+const kaiachainService = require("./services/kaiachainService.js");
 
 const flipside = new Flipside(
   process.env.FLIPSIDE_API_KEY,
@@ -29,8 +30,19 @@ app.get("/health", async function (req, res) {
   return res.status(200).json({ success: true });
 });
 
+app.get('/node/releases', async (req, res) => {
+  try {
+      let start = parseInt(req.query.start || "0");
+      let results = await kaiachainService.getKaiaNodeReleasesCache(start);
+      return res.status(200).json({success: true, data: results});
+  } catch(err) {
+      console.log(err.message);
+      return res.status(404).json({success: false, message: err.message})
+  }
+});
+
 app.get("/*", async function (req, res) {
-return res.status(200).json({ success: true, message: 'Kaia Websites API' });
+  return res.status(200).json({ success: true, message: 'Kaia Websites API' });
 });
 
 const TRANSACTION_COUNT_SQL = `select count(distinct tx_hash) as total_transactions
