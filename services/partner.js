@@ -58,17 +58,16 @@ async function processAndUpsertData(submissions) {
           ? mapIOKPartnersFields(formResponse)
           : mapProjectFields(formResponse);
 
-      // Find the matching category ID based on the category name
-      const categoryMatch = categoriesData.find(
-        (category) => category.name === submissionData.projectCategory
+      const matchedCategories = categoriesData.filter(
+        (category) => submissionData.projectCategory.some(
+          (projCat) => projCat === category.name
+        )
       );
       
-      // If a match is found, assign the category ID
-      if (categoryMatch) {
-        submissionData.categoryId = [categoryMatch.id]; 
-      } else {
-        submissionData.categoryId = [];
-      }
+      // If matches are found, assign the category IDs
+      submissionData.categoryId = matchedCategories.length
+        ? matchedCategories.map((category) => category.id)
+        : [];
       
       const existingItem = existingItems.find(
         (item) => item.fieldData.name === submissionData.Name
@@ -91,10 +90,11 @@ async function processAndUpsertData(submissions) {
 // Map fields for IOK Partners
 function mapIOKPartnersFields(formResponse) {
   const contributionTypes = formResponse["Contribution Type"]?.split(",").filter(Boolean) || [];
-  
+  const projectCategory = formResponse["Project Category"]?.split(",").filter(Boolean) || [];
+
   return {
     Name: formResponse["Name Of Organization"],
-    projectCategory: formResponse["Project Category"],
+    projectCategory: projectCategory,
     projectDescription: formResponse["Description Of Organization"],
     projectWebsite: formResponse["Organization Website URL"],
     Twitter: formResponse["Organizations Twitterhandle"],
@@ -111,10 +111,11 @@ function mapIOKPartnersFields(formResponse) {
 // Map fields for other projects
 function mapProjectFields(formResponse) {
   const projectLogo = formResponse["Project Logo"]?.hostedUrl || null;
+  const projectCategory = formResponse["Project Category"]?.split(",").filter(Boolean) || [];
   
   return {
     Name: formResponse["Project Name"],
-    projectCategory: formResponse["Project Category"],
+    projectCategory: projectCategory,
     projectDescription: formResponse["Project Description"],
     projectWebsite: formResponse["Project Website"],
     Twitter: formResponse["Twitter"],
