@@ -74,8 +74,8 @@ async function processAndUpsertData(submissions) {
       );      
 
       if(existingItem) {
-        await updateItem(existingItem.id, submissionData)
-        console.log('Updated item:', submissionData.Name);
+        // await updateItem(existingItem.id, submissionData)
+        // console.log('Updated item:', submissionData.Name);
       } else {
         await insertItem(submissionData);
         console.log('Inserting new item:', submissionData.Name);
@@ -98,7 +98,7 @@ function mapIOKPartnersFields(formResponse) {
     projectDescription: formResponse["Description Of Organization"],
     projectWebsite: formResponse["Organization Website URL"],
     Twitter: formResponse["Organizations Twitterhandle"],
-    Telegram: formResponse["Representatives Telegramhandle"] || "",
+    Telegram:  "", //formResponse["Representatives Telegramhandle"] ||
     SectorFirst: contributionTypes[0] || "",
     SectorSeconds: contributionTypes[1] || "",
     OthersSocialLink: formResponse["Whitepaper Deck URL"] || "",
@@ -228,6 +228,7 @@ function getAuthHeaders(method = "GET") {
 
 // Schedule fetching form submissions for both IOK Partners and Projects
 setInterval(() => {
+  console.log("Triggering Interval "+Date.now())
   try {
     fetchFormSubmissions(submissionFormIdIok);    // Fetch IOK Partners form submissions
     fetchFormSubmissions(submissionFormIdProjects); // Fetch Projects form submissions
