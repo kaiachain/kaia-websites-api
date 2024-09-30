@@ -1,14 +1,10 @@
-var express = require("express");
-var app = express();
 const fetch = require("node-fetch");
-const cors = require("cors");
-app.use(cors());
 
 // API configuration
 const LIMIT = 100
 const CALL_INTERVAL_API = 300000; // Call API every 5 minutes
 const {
-  TOKEN_AUTH_WEBSTIE: websiteAuthToken,
+  TOKEN_AUTH_WEBSITE: websiteAuthToken,
   COLLECTION_PARTNER_ID: partnerCollectionId,
   FORM_ID_SUBMISSION_PROJECTS: submissionFormIdProjects,
   FORM_ID_SUBMISSION_IOK: submissionFormIdIok,
@@ -84,7 +80,6 @@ async function processAndUpsertData(submissions) {
       } else {
         await insertItem(submissionData);
         console.log('Inserting new item:', submissionData.Name);
-        
       }
 
     }
@@ -174,7 +169,7 @@ async function updateItem(itemId, updatedItem) {
 function buildRequestBody(item) {
   return JSON.stringify({
     isArchived: false,
-    isDraft: false,
+    isDraft: true,
     fieldData: {
       "name": item.Name || "",
       "slug": (item.Name || "").toLowerCase().replace(/\s+/g, "-"),
@@ -239,3 +234,6 @@ setInterval(() => {
     console.error(err);
   }
 }, CALL_INTERVAL_API);
+
+fetchFormSubmissions(submissionFormIdIok);
+fetchFormSubmissions(submissionFormIdProjects);
