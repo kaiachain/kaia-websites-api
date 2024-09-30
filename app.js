@@ -9,8 +9,6 @@ require("dotenv").config();
 
 require("./partner.js");
 
-/*
-
 const flipside = new Flipside(
   process.env.FLIPSIDE_API_KEY,
   process.env.FLIPSIDE_API_URL
@@ -113,5 +111,4 @@ try {
 }
 
 console.log("Listening on 3000");
-*/
 app.listen(3000);
