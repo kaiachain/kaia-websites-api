@@ -7,7 +7,7 @@ var StatsData = {};
 const { Flipside } = require("@flipsidecrypto/sdk");
 require("dotenv").config();
 
-require("./services/partner.js");
+// require("./services/partner.js");
 const kaiachainService = require("./services/kaiachainService.js");
 
 const flipside = new Flipside(
@@ -121,6 +121,11 @@ try {
 } catch (err) {
   console.log(err);
 }
+
+setInterval(() => {
+  kaiachainService.getKaiaNodeReleases();
+}, 10*60*1000);
+kaiachainService.getKaiaNodeReleases();
 
 console.log("Listening on 3000");
 app.listen(3000);
