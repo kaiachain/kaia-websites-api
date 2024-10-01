@@ -7,7 +7,7 @@ var StatsData = {};
 const { Flipside } = require("@flipsidecrypto/sdk");
 require("dotenv").config();
 
-// require("./services/partner.js");
+require("./services/partner.js");
 const kaiachainService = require("./services/kaiachainService.js");
 
 const flipside = new Flipside(
