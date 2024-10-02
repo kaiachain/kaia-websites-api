@@ -3,6 +3,7 @@ const fetch = require("node-fetch");
 // API configuration
 const LIMIT = 100
 const CALL_INTERVAL_API = 300000; // Call API every 5 minutes
+const VALUE_DEFAULT_IS_PARTNER = "df269bd69bbdfe316f01a412638f33aa" // default set iok partner is true
 const {
   TOKEN_AUTH_WEBSITE: websiteAuthToken,
   COLLECTION_PARTNER_ID: partnerCollectionId,
@@ -191,6 +192,7 @@ function buildRequestBody(item) {
       "full-logo": item.FullLogo || "",
       "full-logo-white": item.FullLogoWhite || "",
       "logo": item.Logo || "",
+      "is-partner": VALUE_DEFAULT_IS_PARTNER, 
       "sector-1-7": item.SectorFirst || "",
       "sector-2-7": item.SectorSeconds || ""
     }
