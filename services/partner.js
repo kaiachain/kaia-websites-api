@@ -92,6 +92,9 @@ async function processAndUpsertData(submissions) {
 function mapIOKPartnersFields(formResponse) {
   const contributionTypes = formResponse["Contribution Type"]?.split(",").filter(Boolean) || [];
   const projectCategory = formResponse["Project Category"]?.split(",").filter(Boolean) || [];
+  const projectLogo = formResponse["Project Logo 2"]?.hostedUrl || null;
+  const projectLogoId = formResponse["Project Logo 2"]?.id || null;
+  const projectLogoName = formResponse["Project Logo 2"]?.name || null;
 
   return {
     Name: formResponse["Name Of Organization"],
@@ -103,16 +106,20 @@ function mapIOKPartnersFields(formResponse) {
     SectorFirst: contributionTypes[0] || "",
     SectorSeconds: contributionTypes[1] || "",
     OthersSocialLink: formResponse["Whitepaper Deck URL"] || "",
-    FullLogo: null,
-    FullLogoWhite: null,
-    Logo: null,
+    projectLogoId: projectLogoId,
+    projectLogoName: projectLogoName,
+    FullLogo: projectLogo,
+    FullLogoWhite: projectLogo,
+    Logo: projectLogo,
   };
 }
 
 // Map fields for other projects
 function mapProjectFields(formResponse) {
   const projectLogo = formResponse["Project Logo"]?.hostedUrl || null;
+  const projectLogoId = formResponse["Project Logo"]?.id || null;
   const projectCategory = formResponse["Project Category"]?.split(",").filter(Boolean) || [];
+  const projectLogoName = formResponse["Project Logo"]?.name || null;
   
   return {
     Name: formResponse["Project Name"],
@@ -129,6 +136,8 @@ function mapProjectFields(formResponse) {
     Reddit: formResponse["Reddit"],
     Instagram: formResponse["Instagram"],
     OthersSocialLink: formResponse["Others Social Link"],
+    projectLogoId: projectLogoId,
+    projectLogoName: projectLogoName,
     FullLogo: projectLogo,
     FullLogoWhite: projectLogo,
     Logo: projectLogo,
@@ -189,10 +198,10 @@ function buildRequestBody(item) {
       "reddit-2": item.Reddit || "",
       "instagram": item.Instagram || "",
       "others-social-link": item.OthersSocialLink || "",
-      "full-logo": item.FullLogo || "",
-      "full-logo-white": item.FullLogoWhite || "",
-      "logo": item.Logo || "",
-      "is-partner": VALUE_DEFAULT_IS_PARTNER, 
+      "full-logo": item.FullLogo ? { "fileId": item.projectLogoId, "url": item.FullLogo, "alt": null } : {},
+      "full-logo-white": item.FullLogoWhite ? { "fileId": item.projectLogoId, "url": item.FullLogoWhite, "alt": null } : {},
+      "logo": item.Logo ? { "fileId": item.projectLogoId, "url": item.Logo, "alt": null } : {},
+      "is-partner": VALUE_DEFAULT_IS_PARTNER,
       "sector-1-7": item.SectorFirst || "",
       "sector-2-7": item.SectorSeconds || ""
     }
