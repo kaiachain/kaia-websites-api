@@ -90,8 +90,12 @@ async function processAndUpsertData(submissions) {
 
 // Map fields for IOK Partners
 function mapIOKPartnersFields(formResponse) {
+  // contributionTypes
   const contributionTypes = formResponse["Contribution Type"]?.split(",").filter(Boolean) || [];
+
+  // project category
   const projectCategory = formResponse["Project Category"]?.split(",").filter(Boolean) || [];
+  // project logo
   const projectLogo = formResponse["Project Logo 2"]?.hostedUrl || null;
   const projectLogoId = formResponse["Project Logo 2"]?.id || null;
   const projectLogoName = formResponse["Project Logo 2"]?.name || null;
@@ -116,10 +120,16 @@ function mapIOKPartnersFields(formResponse) {
 
 // Map fields for other projects
 function mapProjectFields(formResponse) {
+  // project logo
   const projectLogo = formResponse["Project Logo"]?.hostedUrl || null;
   const projectLogoId = formResponse["Project Logo"]?.id || null;
-  const projectCategory = formResponse["Project Category"]?.split(",").filter(Boolean) || [];
   const projectLogoName = formResponse["Project Logo"]?.name || null;
+  // project category
+  const projectCategory = formResponse["Project Category"]?.split(",").filter(Boolean) || [];
+  // project logo white
+  const projectLogoWhite = formResponse["Project Logo white"]?.hostedUrl || null;
+  const projectLogoIdWhite = formResponse["Project Logo white"]?.hostedUrl || null;
+  const projectLogoNameWhite = formResponse["Project Logo white"]?.hostedUrl || null;
   
   return {
     Name: formResponse["Project Name"],
@@ -136,10 +146,15 @@ function mapProjectFields(formResponse) {
     Reddit: formResponse["Reddit"],
     Instagram: formResponse["Instagram"],
     OthersSocialLink: formResponse["Others Social Link"],
+    // full logo
     projectLogoId: projectLogoId,
     projectLogoName: projectLogoName,
     FullLogo: projectLogo,
-    FullLogoWhite: projectLogo,
+    //logo white
+    projectLogoIdWhite: projectLogoIdWhite,
+    projectLogoNameWhite: projectLogoNameWhite,
+    FullLogoWhite: projectLogoWhite,
+    // logo
     Logo: projectLogo,
   };
 }
@@ -199,7 +214,7 @@ function buildRequestBody(item) {
       "instagram": item.Instagram || "",
       "others-social-link": item.OthersSocialLink || "",
       "full-logo": item.FullLogo ? { "fileId": item.projectLogoId, "url": item.FullLogo, "alt": null } : {},
-      "full-logo-white": item.FullLogoWhite ? { "fileId": item.projectLogoId, "url": item.FullLogoWhite, "alt": null } : {},
+      "full-logo-white": item.FullLogoWhite ? { "fileId": item.projectLogoIdWhite, "url": item.FullLogoWhite, "alt": null } : {},
       "logo": item.Logo ? { "fileId": item.projectLogoId, "url": item.Logo, "alt": null } : {},
       "is-partner": VALUE_DEFAULT_IS_PARTNER,
       "sector-1-7": item.SectorFirst || "",
