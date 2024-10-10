@@ -3,6 +3,7 @@ const fetch = require("node-fetch");
 // API configuration
 const LIMIT = 100
 const CALL_INTERVAL_API = 300000; // Call API every 5 minutes
+const VALUE_DEFAULT_IS_PARTNER = "df269bd69bbdfe316f01a412638f33aa" // default set iok partner is true
 const {
   TOKEN_AUTH_WEBSITE: websiteAuthToken,
   COLLECTION_PARTNER_ID: partnerCollectionId,
@@ -89,8 +90,15 @@ async function processAndUpsertData(submissions) {
 
 // Map fields for IOK Partners
 function mapIOKPartnersFields(formResponse) {
+  // contributionTypes
   const contributionTypes = formResponse["Contribution Type"]?.split(",").filter(Boolean) || [];
+
+  // project category
   const projectCategory = formResponse["Project Category"]?.split(",").filter(Boolean) || [];
+  // project logo
+  const projectLogo = formResponse["Project Logo 2"]?.hostedUrl || null;
+  const projectLogoId = formResponse["Project Logo 2"]?.id || null;
+  const projectLogoName = formResponse["Project Logo 2"]?.name || null;
 
   return {
     Name: formResponse["Name Of Organization"],
@@ -102,16 +110,26 @@ function mapIOKPartnersFields(formResponse) {
     SectorFirst: contributionTypes[0] || "",
     SectorSeconds: contributionTypes[1] || "",
     OthersSocialLink: formResponse["Whitepaper Deck URL"] || "",
-    FullLogo: null,
-    FullLogoWhite: null,
-    Logo: null,
+    projectLogoId: projectLogoId,
+    projectLogoName: projectLogoName,
+    FullLogo: projectLogo,
+    FullLogoWhite: projectLogo,
+    Logo: projectLogo,
   };
 }
 
 // Map fields for other projects
 function mapProjectFields(formResponse) {
+  // project logo
   const projectLogo = formResponse["Project Logo"]?.hostedUrl || null;
+  const projectLogoId = formResponse["Project Logo"]?.id || null;
+  const projectLogoName = formResponse["Project Logo"]?.name || null;
+  // project category
   const projectCategory = formResponse["Project Category"]?.split(",").filter(Boolean) || [];
+  // project logo white
+  const projectLogoWhite = formResponse["Project Logo white"]?.hostedUrl || null;
+  const projectLogoIdWhite = formResponse["Project Logo white"]?.hostedUrl || null;
+  const projectLogoNameWhite = formResponse["Project Logo white"]?.hostedUrl || null;
   
   return {
     Name: formResponse["Project Name"],
@@ -128,8 +146,15 @@ function mapProjectFields(formResponse) {
     Reddit: formResponse["Reddit"],
     Instagram: formResponse["Instagram"],
     OthersSocialLink: formResponse["Others Social Link"],
+    // full logo
+    projectLogoId: projectLogoId,
+    projectLogoName: projectLogoName,
     FullLogo: projectLogo,
-    FullLogoWhite: projectLogo,
+    //logo white
+    projectLogoIdWhite: projectLogoIdWhite,
+    projectLogoNameWhite: projectLogoNameWhite,
+    FullLogoWhite: projectLogoWhite,
+    // logo
     Logo: projectLogo,
   };
 }
@@ -188,9 +213,10 @@ function buildRequestBody(item) {
       "reddit-2": item.Reddit || "",
       "instagram": item.Instagram || "",
       "others-social-link": item.OthersSocialLink || "",
-      "full-logo": item.FullLogo || "",
-      "full-logo-white": item.FullLogoWhite || "",
-      "logo": item.Logo || "",
+      "full-logo": item.FullLogo ? { "fileId": item.projectLogoId, "url": item.FullLogo, "alt": null } : {},
+      "full-logo-white": item.FullLogoWhite ? { "fileId": item.projectLogoIdWhite, "url": item.FullLogoWhite, "alt": null } : {},
+      "logo": item.Logo ? { "fileId": item.projectLogoId, "url": item.Logo, "alt": null } : {},
+      "is-partner": VALUE_DEFAULT_IS_PARTNER,
       "sector-1-7": item.SectorFirst || "",
       "sector-2-7": item.SectorSeconds || ""
     }
