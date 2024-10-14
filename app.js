@@ -71,21 +71,27 @@ const UNIQUE_ACTIVE_CONTRACTS_SQL = `WITH from_addresses AS (
     FROM active_contracts`;
 
 const loadData = async (_query, _dataElement) => {
-  const queryResultSetTxnCount = await flipside.query.run({ sql: _query });
+  try {
+    const queryResultSetTxnCount = await flipside.query.run({ sql: _query });
 
-  let results = await flipside.query.getQueryResults({
-    queryRunId: queryResultSetTxnCount.queryId,
-    pageNumber: 1,
-    pageSize: 1,
-  });
+    let results = await flipside.query.getQueryResults({
+      queryRunId: queryResultSetTxnCount.queryId,
+      pageNumber: 1,
+      pageSize: 1,
+    });
+  
+    if (results.error) {
+      throw results.error;
+    }
+    if (results.records && results.records.length > 0) {
+      StatsData[_dataElement] = results.records[0][_dataElement];
+      console.log(`Updated ${_dataElement}: ` + results.records[0][_dataElement]);
+    }
+  } catch(err) {
+    console.log("Error while fetching "+_dataElement)
+    console.log(err);
+  }
 
-  if (results.error) {
-    throw results.error;
-  }
-  if (results.records && results.records.length > 0) {
-    StatsData[_dataElement] = results.records[0][_dataElement];
-    console.log(`Updated ${_dataElement}: ` + results.records[0][_dataElement]);
-  }
 };
 
 const loadCoingeckoData = (_dataElement) => {
