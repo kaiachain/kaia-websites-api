@@ -1,7 +1,6 @@
 var express = require("express");
 var app = express();
 const fetch = require("node-fetch");
-// const cors = require("cors");
 
 var StatsData = {};
 const { Flipside } = require("@flipsidecrypto/sdk");
@@ -9,6 +8,7 @@ require("dotenv").config();
 
 require("./services/partner.js");
 const kaiachainService = require("./services/kaiachainService.js");
+const faucetService = require('./services/faucetService.js');
 
 const flipside = new Flipside(
   process.env.FLIPSIDE_API_KEY,
@@ -20,10 +20,40 @@ const COIN_GECKO_URL =
   process.env.COINGECKO_API_KEY +
   process.env.COIN_GECKO_POSTFIX;
 
-// app.use(cors());
-
 app.get("/analytics", async function (req, res) {
   return res.status(200).json({ success: true, data: StatsData });
+});
+
+app.get("/health", async function (req, res) {
+  return res.status(200).json({ success: true });
+});
+
+app.get("/faucet/balance", async function (req, res) {
+  try {
+    let address = req.query.address || "";
+    if(!address) {
+      throw new Error("Address is required")
+    }
+    let results = await faucetService.getBalance(address);
+    return res.status(200).json({ success: true, data: results})
+  } catch(err) {
+    console.log(err.message);
+    return res.status(200).json({ success: false, message: err.message, data: {} });
+  }
+});
+
+app.get("/faucet/run", async function (req, res) {
+  try {
+    let address = req.query.address || "";
+    if(!address) {
+      throw new Error("Address is required")
+    }
+    let results = await faucetService.runFaucet(address);
+    return res.status(200).json({ success: true, data: results})
+  } catch(err) {
+    console.log(err.message);
+    return res.status(200).json({ success: false, message: err.message });
+  }
 });
 
 app.get("/health", async function (req, res) {
