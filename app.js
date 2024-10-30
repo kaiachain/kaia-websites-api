@@ -42,7 +42,7 @@ app.get("/faucet/balance", async function (req, res) {
   }
 });
 
-app.get("/faucet/run", async function (req, res) {
+app.post("/faucet/run", async function (req, res) {
   try {
     let address = req.query.address || "";
     if(!address) {
