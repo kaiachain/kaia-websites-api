@@ -11,9 +11,11 @@
   "license": "ISC",
   "dependencies": {
     "@flipsidecrypto/sdk": "^2.1.0",
+    "@kaiachain/web3js-ext": "^1.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "web3": "^4.14.0"
   }
 }
