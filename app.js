@@ -45,10 +45,11 @@ app.get("/faucet/balance", async function (req, res) {
 app.post("/faucet/run", async function (req, res) {
   try {
     let address = req.query.address || "";
+    let _gReCaptchaToken = req.body.recaptcha || "";
     if(!address) {
       throw new Error("Address is required")
     }
-    let results = await faucetService.runFaucet(address);
+    let results = await faucetService.runFaucet(address, _gReCaptchaToken);
     return res.status(200).json({ success: true, data: results})
   } catch(err) {
     console.log(err.message);

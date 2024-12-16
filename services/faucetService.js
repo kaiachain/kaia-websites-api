@@ -7,6 +7,22 @@ let service = {};
 const provider = new Web3.providers.HttpProvider(process.env.KAIROS_RPC_URL);
 const web3 = new KlaytnWeb3(provider);
 
+const validateRecaptchaV2 = async (_gReCaptchaToken) => {
+  let reCaptchaRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `secret=${process.env.FAUCET_RECAPTCHA_SECRET}&response=${_gReCaptchaToken}`,
+      })
+      .then((reCaptchaRes) => reCaptchaRes.json());
+
+  logger.info(reCaptchaRes);
+  if(!(reCaptchaRes && reCaptchaRes.success)) {
+      throw new Error("Invalid Recaptcha");
+  }
+}
+
 async function clearOldCache() {
   let entries = Object.entries(global.faucetCache);
   for (let i = 0; i < entries.length; i++) {
@@ -37,8 +53,10 @@ service.getBalance = async (_address) => {
   }
 };
 
-service.runFaucet = async (_address) => {
+service.runFaucet = async (_address, _gReCaptchaToken) => {
   try {
+    await validateRecaptchaV2(_gReCaptchaToken);
+
     let isAddress = web3.utils.isAddress(_address);
     if (isAddress) {
       _address = _address.toLowerCase();
