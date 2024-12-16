@@ -17,7 +17,7 @@ const validateRecaptchaV2 = async (_gReCaptchaToken) => {
       })
       .then((reCaptchaRes) => reCaptchaRes.json());
 
-  logger.info(reCaptchaRes);
+  console.log(reCaptchaRes);
   if(!(reCaptchaRes && reCaptchaRes.success)) {
       throw new Error("Invalid Recaptcha");
   }
