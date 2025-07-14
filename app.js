@@ -14,7 +14,7 @@ const kaiachainService = require("./services/kaiachainService.js");
 const faucetService = require('./services/faucetService.js');
 
 const duneClient = new DuneClient(
-  process.env.DUNE_API_KEY
+  process.env.DUNE_API
 );
 
 const COIN_GECKO_URL =
