@@ -3,7 +3,7 @@ var app = express();
 const fetch = require("node-fetch");
 
 var StatsData = {};
-const { Flipside } = require("@flipsidecrypto/sdk");
+const { DuneClient } = require("@duneanalytics/client-sdk");
 require("dotenv").config();
 
 app.use(express.json({ limit: "50mb" }));
@@ -13,9 +13,8 @@ require("./services/partner.js");
 const kaiachainService = require("./services/kaiachainService.js");
 const faucetService = require('./services/faucetService.js');
 
-const flipside = new Flipside(
-  process.env.FLIPSIDE_API_KEY,
-  process.env.FLIPSIDE_API_URL
+const duneClient = new DuneClient(
+  process.env.DUNE_API_KEY
 );
 
 const COIN_GECKO_URL =
@@ -79,55 +78,6 @@ app.get("/*", async function (req, res) {
   return res.status(200).json({ success: true, message: 'Kaia Websites API' });
 });
 
-const TRANSACTION_COUNT_SQL = `select count(distinct tx_hash) as total_transactions
-    from kaia.core.fact_transactions
-    where block_timestamp > current_date - INTERVAL '1 months'`;
-
-const UNIQUE_ACTIVE_WALLETS_SQL = `select count(distinct from_address) as active_wallets
-    from kaia.core.fact_transactions
-    where block_timestamp > current_date - INTERVAL '1 months'`;
-
-const UNIQUE_ACTIVE_CONTRACTS_SQL = `WITH from_addresses AS (
-        SELECT DISTINCT from_address
-        FROM kaia.core.fact_transactions
-    ),
-    to_addresses AS (
-        SELECT DISTINCT to_address
-        FROM kaia.core.fact_transactions
-        WHERE block_timestamp > current_date - INTERVAL '1 months'
-    ),
-    active_contracts AS (
-        SELECT to_address 
-        FROM to_addresses
-        WHERE to_address NOT IN (SELECT from_address FROM from_addresses)
-    )
-    SELECT COUNT(*) AS active_contract_count
-    FROM active_contracts`;
-
-const loadData = async (_query, _dataElement) => {
-  try {
-    const queryResultSetTxnCount = await flipside.query.run({ sql: _query });
-
-    let results = await flipside.query.getQueryResults({
-      queryRunId: queryResultSetTxnCount.queryId,
-      pageNumber: 1,
-      pageSize: 1,
-    });
-  
-    if (results.error) {
-      throw results.error;
-    }
-    if (results.records && results.records.length > 0) {
-      StatsData[_dataElement] = results.records[0][_dataElement];
-      console.log(`Updated ${_dataElement}: ` + results.records[0][_dataElement]);
-    }
-  } catch(err) {
-    console.log("Error while fetching "+_dataElement)
-    console.log(err);
-  }
-
-};
-
 const loadCoingeckoData = (_dataElement) => {
   const options = { method: "GET", headers: { accept: "application/json" } };
   fetch(COIN_GECKO_URL, options)
@@ -142,9 +92,32 @@ const loadCoingeckoData = (_dataElement) => {
 };
 
 const init = () => {
-  loadData(TRANSACTION_COUNT_SQL, "total_transactions");
-  loadData(UNIQUE_ACTIVE_WALLETS_SQL, "active_wallets");
-  loadData(UNIQUE_ACTIVE_CONTRACTS_SQL, "active_contract_count");
+  duneClient.getLatestResult({ queryId: 5271299 }).then((result) => {
+    if(result?.result?.rows?.length > 0) {
+      StatsData["active_wallets"] = result?.result?.rows[0]?.active_wallets;
+      console.log("Updated active_wallets: " + StatsData["active_wallets"]);
+    }
+  }).catch((err) => {
+    console.log(err);
+  });
+
+  duneClient.getLatestResult({ queryId: 5271306 }).then((result) => {
+    if(result?.result?.rows?.length > 0) {
+      StatsData["total_transactions"] = result?.result?.rows[0]?.total_transactions;
+      console.log("Updated total_transactions: " + StatsData["total_transactions"]);
+    }
+  }).catch((err) => {
+    console.log(err);
+  });
+
+  duneClient.getLatestResult({ queryId: 5265651 }).then((result) => {
+    if(result?.result?.rows?.length > 0) {
+      StatsData["active_contract_count"] = result?.result?.rows[0]?.unique_active_contracts;
+      console.log("Updated active_contract_count: " + StatsData["active_contract_count"]);
+    }
+  }).catch((err) => {
+    console.log(err);
+  });
   loadCoingeckoData("marketcap");
 };
 

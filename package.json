@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@flipsidecrypto/sdk": "^2.1.0",
+    "@duneanalytics/client-sdk": "^0.2.5",
     "@kaiachain/web3js-ext": "^1.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
