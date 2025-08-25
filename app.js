@@ -9,7 +9,7 @@ require("dotenv").config();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false }));
 
-require("./services/partner.js");
+const partnerService = require("./services/partner.js");
 const kaiachainService = require("./services/kaiachainService.js");
 const faucetService = require('./services/faucetService.js');
 
@@ -59,10 +59,6 @@ app.post("/faucet/run", async function (req, res) {
   }
 });
 
-app.get("/health", async function (req, res) {
-  return res.status(200).json({ success: true });
-});
-
 app.get('/node/releases', async (req, res) => {
   try {
       let start = parseInt(req.query.start || "0");
@@ -73,6 +69,24 @@ app.get('/node/releases', async (req, res) => {
       return res.status(404).json({success: false, message: err.message})
   }
 });
+
+app.get('/partners', async (req, res) => {
+  try {
+    console.log('Partners API called - fetching all partners');
+    
+    const results = await partnerService.fetchPartnersData();
+    
+    return res.status(200).json({
+      success: true, 
+      data: results
+    });
+  } catch(err) {
+    console.log(err.message);
+    return res.status(500).json({success: false, message: err.message});
+  }
+});
+
+
 
 app.get("/*", async function (req, res) {
   return res.status(200).json({ success: true, message: 'Kaia Websites API' });

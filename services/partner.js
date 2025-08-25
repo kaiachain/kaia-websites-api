@@ -335,6 +335,88 @@ function getAuthHeaders(method = "GET") {
   };
 }
 
+// Function to fetch partners data from Webflow live collection with automatic pagination
+async function fetchPartnersData() {
+  try {
+    const allItems = [];
+    let currentOffset = 0;
+    const maxLimit = LIMIT; // Reuse existing LIMIT constant
+    let totalItems = 0;
+    let hasMore = true;
+    
+    console.log('Starting to fetch all partners data with automatic pagination');
+    
+    // Loop through all pages to get complete data
+    while (hasMore) {
+      const liveCollectionUrl = `${webflowCollectionUrl}/live?limit=${maxLimit}&offset=${currentOffset}`;
+      console.log(`Fetching page at offset: ${currentOffset}, limit: ${maxLimit}`);
+      
+      // Reuse existing fetchFromApi function instead of duplicating fetch logic
+      const data = await fetchFromApi(liveCollectionUrl);
+      const items = data.items || [];
+      
+      if (items.length === 0) {
+        console.log(`No more items found at offset: ${currentOffset}`);
+        hasMore = false;
+        break;
+      }
+      
+      // Transform the data to a cleaner format
+      const transformedItems = items.map(item => ({
+        name: item.fieldData?.name || '',
+        shortDescription: item.fieldData?.['short-description'] || '',
+        description: item.fieldData?.decsription || item.fieldData?.description || '',
+        externalLink: item.fieldData?.['external-link'] || '',
+        socialLinks: {
+          twitter: item.fieldData?.['twitter-x'] || '',
+          telegram: item.fieldData?.telegram || '',
+          medium: item.fieldData?.medium || '',
+          facebook: item.fieldData?.['facebook-2'] || '',
+          github: item.fieldData?.github || '',
+          youtube: item.fieldData?.youtube || '',
+          linkedin: item.fieldData?.linkedin || '',
+          reddit: item.fieldData?.['reddit-2'] || '',
+          instagram: item.fieldData?.instagram || '',
+          others: item.fieldData?.['others-social-link'] || ''
+        },
+        logos: {
+          logo: item.fieldData?.logo || item.fieldData?.['full-logo'] || null
+        }
+      }));
+      
+      allItems.push(...transformedItems);
+      totalItems = data.total || allItems.length;
+      
+      console.log(`Fetched ${items.length} items at offset: ${currentOffset}, total items so far: ${allItems.length}`);
+      
+      // If we got less than the max limit, we've reached the end
+      if (items.length < maxLimit) {
+        console.log(`Reached end of collection. Total items fetched: ${allItems.length}`);
+        hasMore = false;
+        break;
+      }
+      
+      currentOffset += maxLimit;
+      
+      // Add a small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.log(`Final result: ${allItems.length} total partners fetched`);
+
+    return allItems || [];
+    
+  } catch (error) {
+    console.error('Error fetching partners data:', error.message);
+    throw error;
+  }
+}
+
+// Export the function for use in other files
+module.exports = {
+  fetchPartnersData
+};
+
 // Schedule fetching form submissions for both IOK Partners and Projects
 setInterval(() => {
   console.log("Triggering Interval "+Date.now())
@@ -348,3 +430,4 @@ setInterval(() => {
 
 fetchFormSubmissions(submissionFormIdIok);
 fetchFormSubmissions(submissionFormIdProjects);
+
