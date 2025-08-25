@@ -169,6 +169,8 @@ function mapIOKPartnersFields(formResponse) {
     FullLogo: projectLogo,
     FullLogoWhite: projectLogo,
     Logo: projectLogo,
+    OfferingDescription: formResponse["Offering Description"],
+    RedemptionInstructions: formResponse["Redemption Instructions"]
   };
 }
 
@@ -301,7 +303,9 @@ function buildRequestBody(item) {
       "logo": item.Logo ? { "fileId": item.projectLogoId, "url": item.Logo, "alt": null } : {},
       "is-partner": VALUE_DEFAULT_IS_PARTNER,
       "sector-1-7": item.SectorFirst || "",
-      "sector-2-7": item.SectorSeconds || ""
+      "sector-2-7": item.SectorSeconds || "",
+      "offering-description": item.OfferingDescription || "",
+      "redemption-instructions": item.RedemptionInstructions || ""
     }
   });
 }
