@@ -347,6 +347,12 @@ async function fetchPartnersData() {
     const maxLimit = LIMIT; // Reuse existing LIMIT constant
     let totalItems = 0;
     let hasMore = true;
+
+    const categoriesData = await fetchCategories();
+    const categoriesDataMap = categoriesData.reduce((acc, category) => {  
+      acc[category.id] = category.name;
+      return acc;
+    }, {});
     
     console.log('Starting to fetch all partners data with automatic pagination');
     
@@ -370,6 +376,7 @@ async function fetchPartnersData() {
         name: item.fieldData?.name || '',
         shortDescription: item.fieldData?.['short-description'] || '',
         description: item.fieldData?.decsription || item.fieldData?.description || '',
+        categories: item.fieldData?.categories?.map(categoryId => categoriesDataMap[categoryId]) || [],
         externalLink: item.fieldData?.['external-link'] || '',
         socialLinks: {
           twitter: item.fieldData?.['twitter-x'] || '',
@@ -383,10 +390,14 @@ async function fetchPartnersData() {
           instagram: item.fieldData?.instagram || '',
           others: item.fieldData?.['others-social-link'] || ''
         },
-        logos: {
-          logo: item.fieldData?.logo || item.fieldData?.['full-logo'] || null
-        }
+        logo: item.fieldData?.logo?.url || item.fieldData?.['full-logo']?.url || null
       }));
+
+      transformedItems.forEach(item => {
+        if(item.fieldData?.['is-partner'] === VALUE_DEFAULT_IS_PARTNER) {
+          allItems.push(item);
+        }
+      });
       
       allItems.push(...transformedItems);
       totalItems = data.total || allItems.length;
