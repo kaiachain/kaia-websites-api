@@ -15,25 +15,78 @@ const {
 const webflowCollectionUrl = `https://api.webflow.com/v2/collections/${partnerCollectionId}/items`;
 const webflowCategoriesPartnersUrl = `https://api.webflow.com/v2/collections/${partnerCategoryCollectionId}/items`;
 
-// Fetch form submissions based on form type
+// Fetch form submissions based on form type with pagination
 async function fetchFormSubmissions(formId) {
-  const formSubmissionUrl = `https://api.webflow.com/v2/forms/${formId}/submissions?limit=${LIMIT}`;
+  const allSubmissions = [];
+  let offset = 0;
+  const limit = LIMIT;
   
   try {
-    const data = await fetchFromApi(formSubmissionUrl);
-    await processAndUpsertData(data.formSubmissions);
+    while (true) {
+      const formSubmissionUrl = `https://api.webflow.com/v2/forms/${formId}/submissions?limit=${limit}&offset=${offset}`;
+      console.log(`Fetching form submissions with offset: ${offset}, limit: ${limit}`);
+      
+      const data = await fetchFromApi(formSubmissionUrl);
+      const submissions = data.formSubmissions || [];
+      
+      if (submissions.length === 0) {
+        console.log(`No more form submissions found at offset: ${offset}`);
+        break;
+      }
+      
+      allSubmissions.push(...submissions);
+      console.log(`Fetched ${submissions.length} form submissions at offset: ${offset}, total so far: ${allSubmissions.length}`);
+      
+      // If we got less than the limit, we've reached the end
+      if (submissions.length < limit) {
+        console.log(`Reached end of form submissions. Total fetched: ${allSubmissions.length}`);
+        break;
+      }
+      
+      offset += limit;
+    }
+    
+    console.log(`Total form submissions fetched: ${allSubmissions.length}`);
+    await processAndUpsertData(allSubmissions);
   } catch (err) {
     console.error("Error fetching form submissions:", err.message);
   }
 }
 
-// Fetch categories from Webflow
+// Fetch categories from Webflow with pagination
 async function fetchCategories() {
+  const allCategories = [];
+  let offset = 0;
+  const limit = LIMIT;
+  
   try {
-    const response = await fetchFromApi(webflowCategoriesPartnersUrl);
-    const categories = response.items || [];
-
-    const categoriesData = categories.map((category) => ({
+    while (true) {
+      const paginatedUrl = `${webflowCategoriesPartnersUrl}?limit=${limit}&offset=${offset}`;
+      console.log(`Fetching categories with offset: ${offset}, limit: ${limit}`);
+      
+      const response = await fetchFromApi(paginatedUrl);
+      const categories = response.items || [];
+      
+      if (categories.length === 0) {
+        console.log(`No more categories found at offset: ${offset}`);
+        break;
+      }
+      
+      allCategories.push(...categories);
+      console.log(`Fetched ${categories.length} categories at offset: ${offset}, total so far: ${allCategories.length}`);
+      
+      // If we got less than the limit, we've reached the end
+      if (categories.length < limit) {
+        console.log(`Reached end of categories. Total fetched: ${allCategories.length}`);
+        break;
+      }
+      
+      offset += limit;
+    }
+    
+    console.log(`Total categories fetched: ${allCategories.length}`);
+    
+    const categoriesData = allCategories.map((category) => ({
       id: category.id,  
       name: category.fieldData.name 
     }));
@@ -42,6 +95,7 @@ async function fetchCategories() {
 
   } catch (err) {
     console.error("Error fetching categories:", err.message);
+    return [];
   }
 }
 
@@ -159,11 +213,40 @@ function mapProjectFields(formResponse) {
   };
 }
 
-// Fetch existing items from the Webflow collection
+// Fetch existing items from the Webflow collection with pagination
 async function fetchExistingItems() {
+  console.log("Fetching existing items with pagination");
+  const allItems = [];
+  let offset = 0;
+  const limit = LIMIT; // Using the LIMIT constant defined at the top
+  
   try {
-    const data = await fetchFromApi(webflowCollectionUrl);
-    return data.items || [];
+    while (true) {
+      const paginatedUrl = `${webflowCollectionUrl}?limit=${limit}&offset=${offset}`;
+      console.log(`Fetching items with offset: ${offset}, limit: ${limit}`);
+      
+      const data = await fetchFromApi(paginatedUrl);
+      const items = data.items || [];
+      
+      if (items.length === 0) {
+        console.log(`No more items found at offset: ${offset}`);
+        break;
+      }
+      
+      allItems.push(...items);
+      console.log(`Fetched ${items.length} items at offset: ${offset}, total items so far: ${allItems.length}`);
+      
+      // If we got less than the limit, we've reached the end
+      if (items.length < limit) {
+        console.log(`Reached end of collection. Total items fetched: ${allItems.length}`);
+        break;
+      }
+      
+      offset += limit;
+    }
+    
+    console.log(`Total existing items fetched: ${allItems.length}`);
+    return allItems;
   } catch (err) {
     console.error("Error fetching existing items:", err.message);
     return [];
