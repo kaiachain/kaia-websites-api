@@ -4,6 +4,8 @@ const fetch = require("node-fetch");
 const LIMIT = 100
 const CALL_INTERVAL_API = 300000; // Call API every 5 minutes
 const VALUE_DEFAULT_IS_PARTNER = "df269bd69bbdfe316f01a412638f33aa" // default set iok partner is true
+const VALUE_HAS_OFFERINGS_TRUE = "b2b36056e8b11b2c2c66ae2b22a07172" // default set has offerings is true
+const VALUE_HAS_OFFERINGS_FALSE = "69905878a010d2d2ea932d6d52c5d3ee" // default set has offerings is false
 const {
   TOKEN_AUTH_WEBSITE: websiteAuthToken,
   COLLECTION_PARTNER_ID: partnerCollectionId,
@@ -275,6 +277,7 @@ async function updateItem(itemId, updatedItem) {
     console.error("Error updating item:", err.message);
   }
 }
+const validSectors = ["Price Discount", "Free Trail", "Special Offering"];
 
 // Build the request body for insert or update
 function buildRequestBody(item) {
@@ -305,7 +308,8 @@ function buildRequestBody(item) {
       "sector-1-7": item.SectorFirst || "",
       "sector-2-7": item.SectorSeconds || "",
       "offering-description": item.OfferingDescription || "",
-      "redemption-instructions": item.RedemptionInstructions || ""
+      "redemption-instructions": item.RedemptionInstructions || "",
+      "has-offerings": (validSectors.includes(item.SectorFirst) || validSectors.includes(item.SectorSeconds)) ? VALUE_HAS_OFFERINGS_TRUE : VALUE_HAS_OFFERINGS_FALSE
     }
   });
 }
