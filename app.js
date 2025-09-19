@@ -72,11 +72,11 @@ app.get("/faucet/config", async (req, res) => {
 
 app.post("/faucet/run", async function (req, res) {
   try {
-    const { address, tokenTicker = "KAIA" } = req.body;
+    const { address, recaptcha: _gReCaptchaToken, tokenTicker = "KAIA" } = req.body;
     if(!address) {
       throw new Error("Address is required")
     }
-    let results = await faucetService.runFaucet(address, tokenTicker);
+    let results = await faucetService.runFaucet(address, _gReCaptchaToken, tokenTicker);
     return res.status(200).json({ success: true, data: results})
   } catch(err) {
     console.log(err.message);
@@ -110,8 +110,6 @@ app.get('/partners', async (req, res) => {
     return res.status(500).json({success: false, message: err.message});
   }
 });
-
-
 
 app.get("/*", async function (req, res) {
   return res.status(200).json({ success: true, message: 'Kaia Websites API' });
