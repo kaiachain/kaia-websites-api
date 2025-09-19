@@ -2,6 +2,14 @@ var express = require("express");
 var app = express();
 const fetch = require("node-fetch");
 
+const cors = require("cors");
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST"],
+  })
+);
+
 var StatsData = {};
 const { DuneClient } = require("@duneanalytics/client-sdk");
 require("dotenv").config();
@@ -32,26 +40,43 @@ app.get("/health", async function (req, res) {
 
 app.get("/faucet/balance", async function (req, res) {
   try {
-    let address = req.query.address || "";
-    if(!address) {
-      throw new Error("Address is required")
+    const address = req.query.address || "";
+    const tokenTicker = req.query.tokenTicker || "KAIA";
+
+    if (!address) {
+      throw new Error("Address is required");
     }
-    let results = await faucetService.getBalance(address);
-    return res.status(200).json({ success: true, data: results})
-  } catch(err) {
+
+    const results = await faucetService.getBalance(address, tokenTicker);
+    return res.status(200).json({ success: true, data: results });
+  } catch (err) {
     console.log(err.message);
-    return res.status(200).json({ success: false, message: err.message, data: {} });
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+      data: {},
+    });
+  }
+});
+
+app.get("/faucet/config", async (req, res) => {
+  try {
+    const results = await faucetService.getFaucetConfig();
+    console.log("Faucet config:", results); 
+    return res.status(200).json({ success: true, data: results });
+  } catch (err) {
+    console.log(err.message);
+    return res.status(500).json({ success: false, message: err.message });
   }
 });
 
 app.post("/faucet/run", async function (req, res) {
   try {
-    let address = req.query.address || "";
-    let _gReCaptchaToken = req.body.recaptcha || "";
+    const { address, tokenTicker = "KAIA" } = req.body;
     if(!address) {
       throw new Error("Address is required")
     }
-    let results = await faucetService.runFaucet(address, _gReCaptchaToken);
+    let results = await faucetService.runFaucet(address, tokenTicker);
     return res.status(200).json({ success: true, data: results})
   } catch(err) {
     console.log(err.message);
