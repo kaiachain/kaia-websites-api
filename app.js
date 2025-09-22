@@ -2,13 +2,13 @@ var express = require("express");
 var app = express();
 const fetch = require("node-fetch");
 
-const cors = require("cors");
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST"],
-  })
-);
+// const cors = require("cors");
+// app.use(
+//   cors({
+//     origin: "*",
+//     methods: ["GET", "POST"],
+//   })
+// );
 
 var StatsData = {};
 const { DuneClient } = require("@duneanalytics/client-sdk");
