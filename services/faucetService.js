@@ -81,7 +81,7 @@ service.getFaucetConfig = async () => {
         tokenId: 1,
         tokenTicker: "KAIA",
         type: "native",
-        limit: "1",
+        limit: "50",
       },
       {
         tokenId: 2,
