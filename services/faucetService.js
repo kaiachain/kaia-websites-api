@@ -135,7 +135,7 @@ service.runFaucet = async (
       const limitToken = tokenConfig.limit;
       const amount = parseUnits(limitToken, tokenDecimals);
 
-      const data = token.methods.transfer(_address, amount).encodeABI();
+      const data = token.methods.transfer(_address, amount.toString()).encodeABI();
 
       let tx = {
         from: process.env.FAUCET_PUBLIC_KEY,
@@ -144,7 +144,7 @@ service.runFaucet = async (
       };
 
       const gas = await web3.eth.estimateGas(tx);
-      tx.gas = Math.floor(gas * 1.2);
+      tx.gas = Math.floor(parseInt(gas) * 1.2);
       const gasPrice = await web3.eth.getGasPrice();
       tx.gasPrice = gasPrice;
 
