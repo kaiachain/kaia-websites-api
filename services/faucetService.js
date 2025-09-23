@@ -44,9 +44,9 @@ async function clearOldCache() {
   }
 }
 
-function isValidClaim(_address) {
+function isValidClaim(_address, _tokenTicker) {
   _address = _address.toLowerCase();
-  let lastRegisteredTime = global.faucetCache[_address] || 0;
+  let lastRegisteredTime = global.faucetCache[_address + _tokenTicker] || 0;
   return Date.now() - 86400000 > lastRegisteredTime;
 }
 
@@ -109,10 +109,10 @@ service.runFaucet = async (
     let isAddress = web3.utils.isAddress(_address);
     if (!isAddress) throw new Error("Not valid Address");
     _address = _address.toLowerCase();
-    if (!isValidClaim(_address)) throw new Error("Already claimed");
     const tokens = await service.getFaucetConfig();
     const tokenConfig = tokens.find((t) => t.tokenTicker === _tokenTicker);
     if (!tokenConfig) throw new Error("Token not configured in faucet");
+    if (!isValidClaim(_address, tokenConfig.tokenTicker)) throw new Error("Already claimed");
     let txnHash;
     const senderAccount = web3.eth.accounts.privateKeyToAccount(
       process.env.FAUCET_PRIVATE_KEY
@@ -155,7 +155,7 @@ service.runFaucet = async (
       txnHash = receipt.transactionHash;
     }
 
-    global.faucetCache[_address] = Date.now();
+    global.faucetCache[_address + tokenConfig.tokenTicker] = Date.now();
     const balance = await getBalanceByConfig(_address, tokenConfig);
     return { balance, txnHash };
   } catch (err) {
