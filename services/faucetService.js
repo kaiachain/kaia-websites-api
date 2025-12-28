@@ -87,7 +87,7 @@ service.getFaucetConfig = async () => {
         tokenId: 2,
         tokenTicker: "USDT",
         type: "erc20",
-        limit: "100",
+        limit: "10",
         address: "0xd077a400968890eacc75cdc901f0356c943e4fdb",
       },
     ];
