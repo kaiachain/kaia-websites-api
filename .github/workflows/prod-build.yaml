@@ -3,37 +3,50 @@ on:
   push:
     branches: ["main"]
 
+env:
+  PROJECT_ID: "kaia-cluster-prod"
+  SERVICE_ACCOUNT: "kaia-websites-api-prod@kaia-cluster-prod.iam.gserviceaccount.com"
+  WORKLOAD_IDENTITY_PROVIDER: "projects/380808041996/locations/global/workloadIdentityPools/kaia-cluster-prod/providers/kaia-websites-api-gha-prvdr"
+  AR_REPO_LOCATION: "asia-northeast3"
+  AR_URL: "asia-northeast3-docker.pkg.dev/kaia-cluster-prod/kaia-websites-api"
+
 jobs:
-  deploy:
+  push_to_ar:
     permissions:
-      id-token: write
-      contents: read
+      contents: 'read'
+      id-token: 'write'
+    environment:
+      name: ${{ github.ref_name }}
+
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Get AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Google Auth
+        id: auth
+        uses: 'google-github-actions/auth@v2'
         with:
-          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
-          role-session-name: SessionforKlaytnWebsitesApi
-          aws-region: ${{ secrets.AWS_REGION }}
+          token_format: 'access_token'
+          project_id: ${{ env.PROJECT_ID }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-        id: login-ecr
+      - name: Docker Auth
+        id: docker-auth
+        uses: 'docker/login-action@v1'
+        with:
+          username: 'oauth2accesstoken'
+          password: '${{ steps.auth.outputs.access_token }}'
+          registry: '${{ env.AR_REPO_LOCATION }}-docker.pkg.dev'
 
-      - name: Extract commit hash
-        id: vars
-        run: echo "::set-output name=hash::$(git rev-parse --short HEAD)"
-
-      - name: Build, tag, and push image API to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ steps.vars.outputs.hash }}
+      - name: Build and Push Container to ${{ env.PROJECT_ID }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          IMAGE_URL="${{ env.AR_URL }}/kaia-websites-api"
+          IMAGE_TAG=$(git rev-parse --short HEAD)
+
+          docker build -t $IMAGE_URL:$IMAGE_TAG .
+          docker tag $IMAGE_URL:$IMAGE_TAG $IMAGE_URL:latest
+
+          echo "Pushing all tags to ${IMAGE_URL}"
+          docker push --all-tags "${IMAGE_URL}"
