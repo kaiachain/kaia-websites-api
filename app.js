@@ -59,7 +59,7 @@ app.get("/faucet/balance", async function (req, res) {
   }
 });
 
-app.get("/faucet/config", async (req, res) => {
+app.get("/faucet/config", async (req, res) => { 
   try {
     const results = await faucetService.getFaucetConfig();
     console.log("Faucet config:", results); 
