@@ -1,0 +1,78 @@
+diff --git a/lib/commonjs/validator.js b/lib/commonjs/validator.js
+index 48663840f5613d63ba8ec5826b55ed38eb9c1bfc..1a1b4eaff3430197d344644dc3446b605d1dd13d 100644
+--- a/lib/commonjs/validator.js
++++ b/lib/commonjs/validator.js
+@@ -67,9 +67,17 @@ const convertToZod = (schema) => {
+         if (!formats_js_1.default[schema.format]) {
+             throw new web3_errors_1.SchemaFormatError(schema.format);
+         }
+-        return zod_1.z.any().refine(formats_js_1.default[schema.format], (value) => ({
+-            params: { value, format: schema.format },
+-        }));
++        // zod 4 no longer accepts a function as the second argument of refine(),
++        // so attach the failing value through superRefine (works on zod 3 and 4).
++        return zod_1.z.any().superRefine((value, ctx) => {
++            if (!formats_js_1.default[schema.format](value)) {
++                ctx.addIssue({
++                    code: 'custom',
++                    message: 'Invalid input',
++                    params: { value, format: schema.format },
++                });
++            }
++        });
+     }
+     if ((schema === null || schema === void 0 ? void 0 : schema.type) &&
+         (schema === null || schema === void 0 ? void 0 : schema.type) !== 'object' &&
+@@ -104,7 +112,12 @@ class Validator {
+     // eslint-disable-next-line class-methods-use-this
+     convertErrors(errors) {
+         if (errors && Array.isArray(errors) && errors.length > 0) {
+-            return errors.map((error) => {
++            // zod 4 reports a failed union as one "invalid_union" issue holding the
++            // issues of every option; zod 3 surfaced the first option's issues.
++            const flat = errors.flatMap((error) => error.code === 'invalid_union' && Array.isArray(error.errors) && error.errors.length > 0
++                ? error.errors[0].map((issue) => (Object.assign(Object.assign({}, issue), { path: [...error.path, ...issue.path] })))
++                : [error]);
++            return flat.map((error) => {
+                 var _a;
+                 let message;
+                 let keyword;
+diff --git a/lib/esm/validator.js b/lib/esm/validator.js
+index 32f52acb286790872b35afbcd2ba52467014c8a9..b61ea0719502ea7a44a735228d2c1612ee7b9de3 100644
+--- a/lib/esm/validator.js
++++ b/lib/esm/validator.js
+@@ -61,9 +61,17 @@ const convertToZod = (schema) => {
+         if (!formats[schema.format]) {
+             throw new SchemaFormatError(schema.format);
+         }
+-        return z.any().refine(formats[schema.format], (value) => ({
+-            params: { value, format: schema.format },
+-        }));
++        // zod 4 no longer accepts a function as the second argument of refine(),
++        // so attach the failing value through superRefine (works on zod 3 and 4).
++        return z.any().superRefine((value, ctx) => {
++            if (!formats[schema.format](value)) {
++                ctx.addIssue({
++                    code: 'custom',
++                    message: 'Invalid input',
++                    params: { value, format: schema.format },
++                });
++            }
++        });
+     }
+     if ((schema === null || schema === void 0 ? void 0 : schema.type) &&
+         (schema === null || schema === void 0 ? void 0 : schema.type) !== 'object' &&
+@@ -98,7 +106,12 @@ export class Validator {
+     // eslint-disable-next-line class-methods-use-this
+     convertErrors(errors) {
+         if (errors && Array.isArray(errors) && errors.length > 0) {
+-            return errors.map((error) => {
++            // zod 4 reports a failed union as one "invalid_union" issue holding the
++            // issues of every option; zod 3 surfaced the first option's issues.
++            const flat = errors.flatMap((error) => error.code === 'invalid_union' && Array.isArray(error.errors) && error.errors.length > 0
++                ? error.errors[0].map((issue) => (Object.assign(Object.assign({}, issue), { path: [...error.path, ...issue.path] })))
++                : [error]);
++            return flat.map((error) => {
+                 var _a;
+                 let message;
+                 let keyword;
