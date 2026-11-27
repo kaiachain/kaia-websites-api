@@ -1,0 +1,76 @@
+name: security-scan
+
+# Scans the container image and the lock file with Trivy.
+# - Pull requests into main: fails the check on fixable CRITICAL or HIGH findings.
+# - Weekly: catches CVEs published after the last change (runs on the default branch).
+on:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 1 * * 1" # Mondays 01:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: kaia-websites-api:scan
+  TRIVY_VERSION: v0.76.2
+
+jobs:
+  image:
+    name: Trivy image scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Build image (not pushed)
+        run: docker build -t "$IMAGE" .
+
+      - name: Report all HIGH and CRITICAL findings
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          image-ref: ${{ env.IMAGE }}
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          format: table
+          exit-code: "0"
+
+      - name: Fail on fixable HIGH or CRITICAL findings
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          image-ref: ${{ env.IMAGE }}
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
+          skip-setup-trivy: true
+
+  lockfiles:
+    name: Trivy lock file scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # Covers pnpm-lock.yaml, including packages left out of the image.
+      - name: Fail on fixable HIGH or CRITICAL findings
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"

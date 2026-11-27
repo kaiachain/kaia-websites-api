@@ -11,11 +11,12 @@
   "license": "ISC",
   "dependencies": {
     "@duneanalytics/client-sdk": "^0.2.5",
-    "@kaiachain/web3js-ext": "^1.0.1",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "@kaiachain/web3js-ext": "^1.2.2",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
     "node-fetch": "^2.7.0",
-    "web3": "^4.14.0"
-  }
+    "web3": "^4.16.0"
+  },
+  "packageManager": "pnpm@11.24.0"
 }
