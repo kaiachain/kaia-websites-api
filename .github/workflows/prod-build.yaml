@@ -40,13 +40,44 @@ jobs:
           password: '${{ steps.auth.outputs.access_token }}'
           registry: '${{ env.AR_REPO_LOCATION }}-docker.pkg.dev'
 
-      - name: Build and Push Container to ${{ env.PROJECT_ID }}
+      - name: Build Container
+        id: build
         run: |
           IMAGE_URL="${{ env.AR_URL }}/kaia-websites-api"
           IMAGE_TAG=$(git rev-parse --short HEAD)
 
           docker build -t $IMAGE_URL:$IMAGE_TAG .
           docker tag $IMAGE_URL:$IMAGE_TAG $IMAGE_URL:latest
+          echo "image=$IMAGE_URL:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      # Gate: the image is not pushed if it has a fixable CRITICAL finding.
+      # HIGH findings are listed in the log; pull requests are gated on them
+      # by the security-scan workflow.
+      - name: Trivy scan (report HIGH and CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.2
+          image-ref: ${{ steps.build.outputs.image }}
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          format: table
+          exit-code: "0"
+
+      - name: Trivy scan (fail on fixable CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.2
+          image-ref: ${{ steps.build.outputs.image }}
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
+          skip-setup-trivy: true
+
+      - name: Push Container to ${{ env.PROJECT_ID }}
+        run: |
+          IMAGE_URL="${{ env.AR_URL }}/kaia-websites-api"
 
           echo "Pushing all tags to ${IMAGE_URL}"
           docker push --all-tags "${IMAGE_URL}"
