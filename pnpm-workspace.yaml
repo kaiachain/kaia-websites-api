@@ -1,4 +1,9 @@
-# Security overrides for transitive dependencies (pnpm reads these here, not from package.json).
+# Security overrides and patches for transitive dependencies (pnpm reads these here, not from package.json).
 overrides:
   "@babel/core": ^7.29.6
   browserslist: ^4.28.7
+  zod: ^4.6.6
+# web3-validator 2.0.6 targets zod 3 and web3.js is no longer maintained; the
+# patch keeps its error reporting identical on zod 4.
+patchedDependencies:
+  web3-validator@2.0.6: patches/web3-validator@2.0.6.patch
